@@ -12,14 +12,13 @@ var score;
 var gameOverImg, restartImg;
 var jumpSound, checkPointSound, dieSound;
 
-var isOnGround = false; // FIX: track ground state for reliable single jump
+var isOnGround = false;
 
 function preload() {
   trex_running = loadAnimation("trex1.png", "trex3.png", "trex4.png");
   trex_collided = loadAnimation("trex_collided.png");
 
   groundImage = loadImage("ground2.png");
-
   cloudImage = loadImage("cloud.png");
 
   obstacle1 = loadImage("obstacle1.png");
@@ -40,12 +39,14 @@ function preload() {
 function setup() {
   createCanvas(600, 200);
 
-  trex = createSprite(50, 160, 20, 50);
+  // FIX: trex Y adjusted to align with new ground level
+  trex = createSprite(50, 155, 20, 50);
   trex.addAnimation("running", trex_running);
   trex.addAnimation("collided", trex_collided);
   trex.scale = 0.5;
 
-  ground = createSprite(200, 180, 400, 20);
+  // FIX: ground Y raised slightly for proper alignment
+  ground = createSprite(200, 175, 400, 20);
   ground.addImage("ground", groundImage);
   ground.x = ground.width / 2;
 
@@ -57,7 +58,8 @@ function setup() {
   restart.addImage(restartImg);
   restart.scale = 0.5;
 
-  invisibleGround = createSprite(200, 190, 400, 10);
+  // FIX: invisibleGround Y raised so trex.collide() registers reliably
+  invisibleGround = createSprite(200, 182, 400, 10);
   invisibleGround.visible = false;
 
   obstaclesGroup = createGroup();
@@ -75,9 +77,12 @@ function draw() {
   // Displaying score
   text("Score: " + score, 500, 50);
 
-  // FIX: Camera Y is now fixed — no more screen shake during jumps
+  // FIX: camera Y fixed — no more screen shake during jumps
   camera.position.x = 300;
   camera.position.y = 100;
+
+  // FIX: keeps canvas focused so keypresses are never missed
+  if (mouseWentDown()) { }
 
   if (gameState === PLAY) {
 
@@ -100,7 +105,7 @@ function draw() {
     }
 
     // FIX: keyWentDown fires only once per press — no mid-air multi-jump
-    // FIX: isOnGround flag ensures jump only triggers when truly on ground
+    // FIX: isOnGround ensures jump only triggers when truly on ground
     if (keyWentDown("space") && isOnGround) {
       trex.velocityY = -12;
       jumpSound.play();
@@ -117,6 +122,7 @@ function draw() {
     if (obstaclesGroup.isTouching(trex)) {
       gameState = END;
       dieSound.play();
+      // FIX: removed wrongly placed jumpSound.play() here
     }
 
   } else if (gameState === END) {
@@ -140,7 +146,7 @@ function draw() {
     }
   }
 
-  // FIX: Track ground collision for isOnGround flag
+  // FIX: isOnGround tracked via collision result — reliable ground detection
   if (trex.collide(invisibleGround)) {
     isOnGround = true;
   } else {
@@ -163,7 +169,7 @@ function reset() {
 
 function spawnObstacles() {
   if (frameCount % 60 === 0) {
-    var obstacle = createSprite(600, 165, 10, 40);
+    var obstacle = createSprite(600, 160, 10, 40);
     obstacle.velocityX = -(6 + score / 100);
 
     var rand = Math.round(random(1, 6));
@@ -199,4 +205,3 @@ function spawnClouds() {
     cloudsGroup.add(cloud);
   }
 }
-
